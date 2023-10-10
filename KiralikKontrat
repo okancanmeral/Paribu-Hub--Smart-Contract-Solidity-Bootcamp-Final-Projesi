@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract KiralikKontrat {
+    address public sahip; // Kontrat sahibi
+
+    struct Kiraci {
+        string adSoyad;
+        string adres;
+        bool kirada;
+        uint256 kiraBaslangicTarihi;
+        uint256 kiraBitisTarihi;
+    }
+
+    mapping(address => Kiraci) public kiracilar;
+
+    struct MulkSahibi {
+        string adSoyad;
+        address mulkAdresi;
+    }
+
+    mapping(address => MulkSahibi) public mulkSahipleri;
+
+    event KirayaVer(address kiraciAdresi, string kiraciAdiSoyadi, uint256 kiraBaslangic, uint256 kiraBitis);
+    event KirayiSonlandir(address kiraciAdresi, uint256 kiraBitis);
+    event HataBildir(address kiraciAdresi, string hata);
+
+    constructor() {
+        sahip = msg.sender;
+    }
+
+    modifier sadeceSahip() {
+        require(msg.sender == sahip, unicode"Bu işlem için yetkilendirilmediniz.");
+        _;
+    }
+
+    function kiraciEkle(address _kiraciAdresi, string memory _adSoyad, string memory _adres, uint256 _kiraBaslangic, uint256 _kiraBitis) public sadeceSahip {
+        Kiraci storage kiraci = kiracilar[_kiraciAdresi];
+        kiraci.adSoyad = _adSoyad;
+        kiraci.adres = _adres;
+        kiraci.kiraBaslangicTarihi = _kiraBaslangic;
+        kiraci.kiraBitisTarihi = _kiraBitis;
+        kiraci.kirada = true;
+        emit KirayaVer(_kiraciAdresi, _adSoyad, _kiraBaslangic, _kiraBitis);
+    }
+
+    function kiraSonlandir(address _kiraciAdresi) public sadeceSahip {
+        Kiraci storage kiraci = kiracilar[_kiraciAdresi];
+        require(kiraci.kirada, unicode"Kiracı kirada değil.");
+        kiraci.kirada = false;
+        emit KirayiSonlandir(_kiraciAdresi, kiraci.kiraBitisTarihi);
+    }
+
+    function hataBildir(string memory _hata) public {
+        Kiraci storage kiraci = kiracilar[msg.sender];
+        require(kiraci.kirada, unicode"Kiracı kirada değil.");
+        emit HataBildir(msg.sender, _hata);
+    }
+}
