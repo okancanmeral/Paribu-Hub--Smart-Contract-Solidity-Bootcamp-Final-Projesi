@@ -1,0 +1,33 @@
+function transfer(address to, uint256 value) external returns (bool) {
+        require(value <= _balances[msg.sender], "Insufficient Balance");
+        require(to != address(0), "Zero Address");
+
+        _balances[msg.sender] = _balances[msg.sender] - value;
+        _balances[to] = _balances[to] + value;
+        emit Transfer(msg.sender, to, value);
+        return true;
+    }
+
+Bu işlev, bir kullanıcının bakiyesini düşürdükten sonra alıcının bakiyesini artırırken, reentrant saldırılarına karşı savunmasızdır. 
+Reentrant saldırıları, alıcı olarak belirtilen başka bir akıllı sözleşme tarafından başlatılabilir ve bu, işlemin sıkışmasına neden olabilir. 
+Reentrant saldırılardan korunmak için özel bir güvenlik önlemi eklemek önemlidir. Solidity'nin "nonReentrant" modifikatörünü kullanmak bu konuda iyi bir çözüm olabilir.
+
+bool private locked;
+
+modifier noReentrant() {
+    require(!locked, "Reentrant call");
+    locked = true;
+    _;
+    locked = false;
+}
+
+function transfer(address to, uint256 value) external noReentrant returns (bool) {
+      require(value <= _balances[msg.sender], "Insufficient Balance");
+        require(to != address(0), "Zero Address");
+
+        _balances[msg.sender] = _balances[msg.sender] - value;
+        _balances[to] = _balances[to] + value;
+        emit Transfer(msg.sender, to, value);
+        return true;
+}
+Diye tekrar düzenleyebiliriz.
